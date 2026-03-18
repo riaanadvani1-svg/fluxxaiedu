@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FluxxAI PRO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+/* ================= FIREBASE CONFIG ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyC95K4zdbLvt9OXKxSidoIO85vpguHj6nw",
+  authDomain: "fluxxaiedu-61986.firebaseapp.com",
+  projectId: "fluxxaiedu-61986",
+  storageBucket: "fluxxaiedu-61986.appspot.com",
+  messagingSenderId: "397934390397",
+  appId: "1:397934390397:web:7044220ef90dcc6541d514"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth();
+const provider = new GoogleAuthProvider();
+
+/* ================= LOGIN ================= */
+window.login = async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    document.getElementById("loginOverlay").style.display = "none";
+
+    document.getElementById("profileName").innerText = user.displayName;
+    document.getElementById("profilePic").src = user.photoURL;
+
+  } catch (e) {
+    alert(e.message);
+  }
+};
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    document.getElementById("loginOverlay").style.display = "none";
+    document.getElementById("profileName").innerText = user.displayName;
+    document.getElementById("profilePic").src = user.photoURL;
+  }
+});
+
+/* ================= AI ================= */
+const HF_TOKEN = "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";
+
+window.askAI = async () => {
+  const input = document.getElementById("aiInput").value;
+  const output = document.getElementById("aiOutput");
+
+  output.innerText = "Thinking...";
+
+  const res = await fetch("https://api-inference.huggingface.co/models/google/flan-t5-base", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${HF_TOKEN}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      inputs: "Explain simply for a student: " + input
+    })
+  });
+
+  const data = await res.json();
+  output.innerText = data[0]?.generated_text || "AI failed.";
+};
+
+/* ================= XP SYSTEM ================= */
+let xp = localStorage.getItem("xp") || 0;
+document.addEventListener("DOMContentLoaded",()=>{
+  document.getElementById("xp").innerText = xp;
+});
+
+window.addXP = (amount)=>{
+  xp = parseInt(xp) + amount;
+  localStorage.setItem("xp", xp);
+  document.getElementById("xp").innerText = xp;
+};
+
+/* ================= QUIZ ================= */
+window.checkAnswer = (correct)=>{
+  if(correct){
+    alert("Correct! +10 XP");
+    addXP(10);
+  } else {
+    alert("Wrong!");
+  }
+};
+</script>
+
+<style>
+body{
+  margin:0;
+  font-family:sans-serif;
+  background:#0a0a0a;
+  color:white;
+}
+
+/* NAVBAR */
+nav{
+  display:flex;
+  justify-content:space-between;
+  padding:10px 20px;
+  background:linear-gradient(90deg,#ff00cc,#3333ff,#00ffcc);
+}
+
+.profile{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.profile img{
+  width:35px;
+  border-radius:50%;
+}
+
+/* LOGIN */
+#loginOverlay{
+  position:fixed;
+  inset:0;
+  background:black;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+}
+
+button{
+  padding:10px 20px;
+  border:none;
+  border-radius:20px;
+  cursor:pointer;
+  margin:5px;
+}
+
+/* SECTIONS */
+.container{
+  padding:20px;
+}
+
+.card{
+  background:#111;
+  padding:15px;
+  margin:10px 0;
+  border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginOverlay">
+  <h1>FluxxAI</h1>
+  <button onclick="login()">Login with Google</button>
+</div>
+
+<!-- NAVBAR -->
+<nav>
+  <div>FluxxAI</div>
+  <div class="profile">
+    <span id="profileName">User</span>
+    <img id="profilePic">
+    <span>XP: <span id="xp">0</span></span>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- INTRO -->
+<div class="card">
+  <h2>Welcome</h2>
+  <p>AI-powered learning platform 🚀</p>
+</div>
+
+<!-- LESSON -->
+<div class="card">
+  <h2>Lesson: Cells</h2>
+  <p>The nucleus controls the cell.</p>
+  <button onclick="addXP(5)">Mark Complete (+5 XP)</button>
+</div>
+
+<!-- QUIZ -->
+<div class="card">
+  <h2>Quiz</h2>
+  <p>What controls the cell?</p>
+  <button onclick="checkAnswer(true)">Nucleus</button>
+  <button onclick="checkAnswer(false)">Mitochondria</button>
+</div>
+
+<!-- AI -->
+<div class="card">
+  <h2>AI Tutor</h2>
+  <input id="aiInput" placeholder="Ask anything...">
+  <button onclick="askAI()">Ask</button>
+  <p id="aiOutput"></p>
+</div>
+
+</div>
+
+</body>
+</html>
